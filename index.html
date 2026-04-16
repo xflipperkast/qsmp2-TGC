@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QSMP2 TCG — Epic Community Trading Card Game</title>
+  <meta name="description" content="A fan-made website for the QSMP2 Trading Card Game, featuring a searchable gallery and fullscreen 3D card previews." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #eef8ff;
+      --bg-2: #d8f0ff;
+      --bg-3: #f4ebd0;
+      --panel: #fff9eb;
+      --panel-2: #efe1bc;
+      --panel-3: #e4d3aa;
+      --line: #5d7e45;
+      --line-soft: #9db17d;
+      --text: #24311d;
+      --muted: #5e6e50;
+      --green: #78c257;
+      --green-2: #4d9936;
+      --gold: #ffcf5f;
+      --gold-2: #f0aa20;
+      --stone: #d6ccb3;
+      --sky: #cfeeff;
+      --white: #ffffff;
+      --shadow: 0 10px 0 rgba(103, 84, 49, 0.16), 0 24px 40px rgba(103, 84, 49, 0.16);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --max: 1280px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      color: var(--text);
+      overflow-x: hidden;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.42), transparent 18%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 42%, var(--bg-3) 100%);
+      min-height: 100vh;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .bg-orbs,
+    .bg-grid,
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-orbs {
+      background:
+        radial-gradient(circle at 14% 18%, rgba(255,255,255,0.8), transparent 0 18%),
+        radial-gradient(circle at 78% 10%, rgba(255,255,255,0.45), transparent 0 12%),
+        radial-gradient(circle at 72% 38%, rgba(255, 241, 189, 0.55), transparent 0 16%);
+      filter: blur(26px);
+      opacity: 0.9;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    .bg-grid {
+      background-image:
+        linear-gradient(rgba(66, 112, 40, 0.08) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(66, 112, 40, 0.08) 2px, transparent 2px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(180deg, rgba(255,255,255,1), rgba(255,255,255,0.45));
+    }
+
+    .stars {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.18) 0 0),
+        linear-gradient(rgba(255,255,255,0.18) 0 0);
+      background-size: 8px 8px, 10px 10px;
+      background-position: 20px 30px, 140px 80px;
+      opacity: 0.08;
+    }
+
+    .site {
+      position: relative;
+      z-index: 1;
+    }
+
+    .container {
+      width: min(calc(100% - 32px), var(--max));
+      margin: 0 auto;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(14px);
+      background: rgba(255, 249, 235, 0.88);
+      border-bottom: 4px solid var(--line-soft);
+      box-shadow: 0 8px 0 rgba(103, 84, 49, 0.08);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 82px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 54px;
+      height: 54px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 4px solid var(--line);
+      background: var(--white);
+      box-shadow: 0 6px 0 rgba(103, 84, 49, 0.14);
+      flex: 0 0 auto;
+    }
+
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand-text strong,
+    h1, h2, h3,
+    .btn,
+    .chip,
+    .eyebrow {
+      font-family: "Silkscreen", sans-serif;
+    }
+
+    .brand-text strong {
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .brand-text span {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a:not(.nav-cta) {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .nav-links a:not(.nav-cta):hover {
+      color: var(--text);
+    }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      padding: 12px 18px;
+      border: 4px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: linear-gradient(180deg, #ffde87 0%, #ffbe3b 100%);
+      color: #3c2608;
+      box-shadow: 0 6px 0 rgba(103, 84, 49, 0.18);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      font-weight: 800;
+    }
+
+    .nav-cta:hover {
+      transform: translateY(2px);
+      box-shadow: 0 4px 0 rgba(103, 84, 49, 0.18);
+    }
+
+    .hero {
+      padding: 58px 0 28px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.02fr 0.98fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .hero-copy,
+    .hero-visual,
+    .section-panel,
+    .cta-panel {
+      position: relative;
+      overflow: hidden;
+      border: 4px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-copy::before,
+    .hero-visual::before,
+    .section-panel::before,
+    .cta-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.28), transparent 24%),
+        repeating-linear-gradient(
+          0deg,
+          rgba(255,255,255,0.04) 0 16px,
+          rgba(0,0,0,0.02) 16px 32px
+        );
+      pointer-events: none;
+    }
+
+    .hero-copy::after,
+    .hero-visual::after,
+    .section-panel::after,
+    .cta-panel::after {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 12px;
+      background:
+        linear-gradient(90deg, #7fcb5e 0 35%, #70ba52 35% 70%, #4d9936 70% 100%);
+      pointer-events: none;
+    }
+
+    .hero-copy {
+      padding: 34px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: #385126;
+      background: rgba(124, 194, 87, 0.14);
+      border: 3px solid rgba(93, 126, 69, 0.3);
+      margin-bottom: 16px;
+    }
+
+    h1, h2, h3 {
+      line-height: 1.18;
+      letter-spacing: 0.01em;
+    }
+
+    h1 {
+      font-size: clamp(2.15rem, 5.2vw, 4.5rem);
+      max-width: 10ch;
+    }
+
+    .gold {
+      color: #c88705;
+      text-shadow: 2px 2px 0 rgba(255,255,255,0.42);
+    }
+
+    .hero-copy p {
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.8;
+      margin-top: 18px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 26px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 56px;
+      padding: 14px 18px;
+      border: 4px solid var(--line);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      font-size: 0.74rem;
+      line-height: 1.45;
+      text-transform: uppercase;
+      box-shadow: 0 6px 0 rgba(103, 84, 49, 0.18);
+    }
+
+    .btn:hover {
+      transform: translateY(2px);
+      box-shadow: 0 4px 0 rgba(103, 84, 49, 0.18);
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, var(--gold) 0%, var(--gold-2) 100%);
+      color: #3c2608;
+      font-weight: 700;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(180deg, #8cd56b 0%, #63b749 100%);
+      color: #173211;
+      font-weight: 700;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .stat {
+      border: 3px solid rgba(93, 126, 69, 0.26);
+      background: rgba(255,255,255,0.5);
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: inset 0 4px 0 rgba(255,255,255,0.48);
+    }
+
+    .stat strong {
+      font-size: 1.38rem;
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .hero-visual {
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      min-height: 690px;
+      isolation: isolate;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.45), transparent 22%),
+        linear-gradient(180deg, #fdf8e6 0%, #eedfb5 100%);
+    }
+
+    .ring,
+    .ring::before,
+    .ring::after {
+      position: absolute;
+      content: "";
+      border: 4px solid rgba(93, 126, 69, 0.22);
+      border-radius: 18px;
+    }
+
+    .ring {
+      width: 420px;
+      height: 420px;
+      animation: spin 22s linear infinite;
+      box-shadow: 0 0 0 10px rgba(255,255,255,0.12);
+    }
+
+    .ring::before {
+      inset: 26px;
+      animation: spinReverse 16s linear infinite;
+    }
+
+    .ring::after {
+      inset: 68px;
+      animation: spin 12s linear infinite;
+    }
+
+    .featured-card {
+      position: relative;
+      width: min(100%, 420px);
+      z-index: 2;
+      animation: floatCard 5.8s ease-in-out infinite;
+      filter: drop-shadow(0 28px 36px rgba(103, 84, 49, 0.22));
+      border: 5px solid #4f6e39;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .floating-card {
+      position: absolute;
+      width: 140px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 4px solid rgba(93, 126, 69, 0.42);
+      box-shadow: 0 10px 0 rgba(103, 84, 49, 0.14), 0 20px 30px rgba(103, 84, 49, 0.14);
+      background: #fff;
+    }
+
+    .floating-card.one {
+      top: 76px;
+      right: 24px;
+      transform: rotate(8deg);
+      animation: floatSmall 7s ease-in-out infinite;
+    }
+
+    .floating-card.two {
+      bottom: 52px;
+      left: 22px;
+      transform: rotate(-8deg);
+      animation: floatSmall 8s ease-in-out infinite reverse;
+    }
+
+    .section {
+      padding: 34px 0;
+    }
+
+    .section-panel {
+      padding: 28px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .section-head p {
+      color: var(--muted);
+      max-width: 62ch;
+      line-height: 1.78;
+      margin-top: 10px;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3.4vw, 2.7rem);
+    }
+
+    .gallery-toolbar {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .search-wrap {
+      flex: 1 1 320px;
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      min-height: 58px;
+      border-radius: 10px;
+      border: 4px solid rgba(93, 126, 69, 0.35);
+      background: rgba(255,255,255,0.76);
+      color: var(--text);
+      padding: 0 18px 0 50px;
+      outline: none;
+      font-size: 0.98rem;
+      box-shadow: inset 0 4px 0 rgba(255,255,255,0.45);
+    }
+
+    .search-wrap input::placeholder {
+      color: #7a8d69;
+    }
+
+    .search-wrap .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c8452;
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+
+    .chip-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      border: 3px solid rgba(93, 126, 69, 0.36);
+      color: #405732;
+      background: rgba(255,255,255,0.65);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      line-height: 1.35;
+      cursor: pointer;
+      transition: 0.15s ease;
+      box-shadow: 0 4px 0 rgba(103, 84, 49, 0.1);
+    }
+
+    .chip.active,
+    .chip:hover {
+      color: #1f2a19;
+      border-color: rgba(93, 126, 69, 0.62);
+      background: rgba(124, 194, 87, 0.22);
+      transform: translateY(1px);
+      box-shadow: 0 3px 0 rgba(103, 84, 49, 0.1);
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .gallery-card {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 4px solid rgba(93, 126, 69, 0.42);
+      background: linear-gradient(180deg, #fffef8 0%, #ebdcb5 100%);
+      box-shadow: 0 8px 0 rgba(103, 84, 49, 0.14), 0 18px 28px rgba(103, 84, 49, 0.12);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .gallery-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 0 rgba(103, 84, 49, 0.14), 0 24px 34px rgba(103, 84, 49, 0.14);
+      border-color: rgba(93, 126, 69, 0.72);
+    }
+
+    .gallery-card .card-button {
+      all: unset;
+      display: block;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .gallery-card .card-button:focus-visible {
+      outline: 4px solid rgba(240, 170, 32, 0.7);
+      outline-offset: -4px;
+    }
+
+    .gallery-card .thumb {
+      aspect-ratio: 0.71;
+      overflow: hidden;
+      background: linear-gradient(180deg, #f7f1df 0%, #d8ccb0 100%);
+      border-bottom: 4px solid rgba(93, 126, 69, 0.24);
+    }
+
+    .gallery-card .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.2s ease;
+    }
+
+    .gallery-card:hover .thumb img {
+      transform: scale(1.03);
+    }
+
+    .gallery-card .meta {
+      padding: 14px 14px 16px;
+    }
+
+    .gallery-card .meta strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 7px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+
+    .gallery-card .meta span {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .empty-state {
+      display: none;
+      padding: 28px;
+      border-radius: 12px;
+      border: 4px dashed rgba(93, 126, 69, 0.28);
+      color: var(--muted);
+      text-align: center;
+      margin-top: 12px;
+      background: rgba(255,255,255,0.45);
+    }
+
+    .cta-panel {
+      padding: 34px;
+      text-align: center;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 214, 125, 0.24), transparent 0 26%),
+        radial-gradient(circle at 80% 20%, rgba(148, 219, 114, 0.24), transparent 0 24%),
+        linear-gradient(180deg, var(--panel) 0%, var(--panel-3) 100%);
+    }
+
+    .cta-panel p {
+      color: var(--muted);
+      max-width: 62ch;
+      margin: 14px auto 0;
+      line-height: 1.8;
+    }
+
+    .footer {
+      padding: 24px 0 48px;
+      color: #627452;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-top: 12px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(65, 91, 43, 0.34);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.22s ease, visibility 0.22s ease;
+    }
+
+    .card-modal.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .card-modal-inner {
+      position: relative;
+      width: min(88vw, 980px);
+      max-height: 90vh;
+      border-radius: 14px;
+      border: 4px solid var(--line);
+      background: linear-gradient(180deg, #fffaf0 0%, #ecdcb0 100%);
+      box-shadow: 0 12px 0 rgba(103, 84, 49, 0.18), 0 40px 90px rgba(24, 30, 18, 0.28);
+      display: block;
+    }
+    
+    .card-modal-stage {
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      min-height: auto;
+      perspective: 1800px;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0.58), transparent 0 48%),
+        linear-gradient(180deg, #f8f1dc 0%, #e9d9ac 100%);
+    }
+    
+    .modal-tilt-area {
+      width: min(82vw, 720px);
+      perspective: 1800px;
+    }
+
+    .modal-card-frame {
+      position: relative;
+      width: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 6px solid #42592f;
+      background: #ffffff;
+      transform-style: preserve-3d;
+      transition: transform 0.12s linear;
+      box-shadow: 0 28px 50px rgba(48, 58, 37, 0.28);
+      will-change: transform;
+    }
+
+    .modal-card-frame img {
+      width: 100%;
+      height: auto;
+      display: block;
+      pointer-events: none;
+      transform: translateZ(30px) scale(1.01);
+      will-change: transform;
+    }
+
+    .modal-shine {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      mix-blend-mode: screen;
+    }
+
+    .card-modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 2;
+      width: 52px;
+      height: 52px;
+      border: 4px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(180deg, #ffde87 0%, #ffbf42 100%);
+      color: #382106;
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: 900;
+      box-shadow: 0 6px 0 rgba(103, 84, 49, 0.18);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .card-modal-close:hover {
+      transform: translateY(2px);
+      box-shadow: 0 4px 0 rgba(103, 84, 49, 0.18);
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(0, 0, 0) scale(1); }
+      to { transform: translate3d(0, -18px, 0) scale(1.04); }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes spinReverse {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+
+    @keyframes floatCard {
+      0%, 100% { transform: translateY(0px) rotate(-1.2deg); }
+      50% { transform: translateY(-12px) rotate(1.2deg); }
+    }
+
+    @keyframes floatSmall {
+      0%, 100% { transform: translateY(0px) rotate(8deg); }
+      50% { transform: translateY(-10px) rotate(5deg); }
+    }
+
+    @media (max-width: 1100px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .gallery-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .hero-visual {
+        min-height: 600px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .nav-inner {
+        min-height: auto;
+        padding: 16px 0;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    
+      .nav-links {
+        gap: 10px;
+      }
+    
+      .hero-copy,
+      .section-panel,
+      .cta-panel {
+        padding: 22px;
+      }
+    
+      .hero-stats,
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+    
+      .floating-card {
+        display: none;
+      }
+    
+      .hero-visual {
+        min-height: 460px;
+      }
+    
+      .ring {
+        width: 300px;
+        height: 300px;
+      }
+    
+      .card-modal {
+        padding: 10px;
+      }
+    
+      .card-modal-inner {
+        width: min(94vw, 760px);
+        max-height: 92vh;
+      }
+    
+      .card-modal-stage {
+        padding: 12px;
+      }
+    
+      .modal-tilt-area {
+        width: min(88vw, 520px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orbs"></div>
+  <div class="bg-grid"></div>
+  <div class="stars"></div>
+
+  <div class="site">
+    <header class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="#top">
+          <div class="brand-mark">
+            <img src="https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/qsmptcg_color-high.png?enable-io=true&height=100" alt="QSMP2 TCG logo">
+          </div>
+          <div class="brand-text">
+            <strong>QSMP2 TCG</strong>
+          </div>
+        </a>
+
+        <nav class="nav-links">
+          <a class="btn btn-primary" href="#set1">Set 1</a>
+          <a class="btn btn-secondary" href="https://discord.gg/JeremyFrieser" target="_blank" rel="noopener noreferrer">Join Discord</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero container">
+        <div class="hero-grid">
+          <div class="hero-copy reveal visible">
+            <div class="eyebrow">⚔ Community-made • QSMP universe • TCG project</div>
+            <h1>Forge the <span class="gold">legend</span> of QSMP2.</h1>
+            <p>
+              A fan-made trading card experience built to celebrate the art, memes, moments, chaos, and characters of the QSMP community.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#set1">Explore Set 1</a>
+              <a class="btn btn-secondary" href="https://discord.gg/JeremyFrieser" target="_blank" rel="noopener noreferrer">Submit Your Art</a>
+            </div>
+            <div class="hero-stats">
+              <div class="stat">
+                <strong>54</strong>
+                <span>Cards in Set 1</span>
+              </div>
+              <div class="stat">
+                <strong>Fan-Made</strong>
+                <span>Built from community art</span>
+              </div>
+              <div class="stat">
+                <strong>Fullscreen</strong>
+                <span>Click a card to inspect it</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual reveal visible">
+            <div class="ring"></div>
+            <div class="floating-card one">
+              <img src="https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-heist-high.png" alt="The Heist card">
+            </div>
+            <div class="floating-card two">
+              <img src="https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/donny-bravo-high.png" alt="Donny Bravo card">
+            </div>
+            <img class="featured-card" src="https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/bartender-jeremy-high.png" alt="Bartender Jeremy featured card">
+          </div>
+        </div>
+      </section>
+
+      <section class="section container" id="set1">
+        <div class="section-panel reveal">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">🃏 Set 1 collection</div>
+              <h2>Search the first wave of cards.</h2>
+              <p>
+                Browse the current set, click any card to open it fullscreen, and move your mouse on the big preview for the 3D effect.
+              </p>
+            </div>
+          </div>
+
+          <div class="gallery-toolbar">
+            <div class="search-wrap">
+              <span class="search-icon">⌕</span>
+              <input id="gallerySearch" type="text" placeholder="Search cards like Bartender Jeremy, The Trial, Cucurucho..." />
+            </div>
+          </div>
+
+          <div class="gallery-grid" id="galleryGrid"></div>
+          <div class="empty-state" id="emptyState">No cards matched that search. Try another name or clear the filter.</div>
+        </div>
+      </section>
+
+      <section class="section container">
+        <div class="cta-panel reveal">
+          <div class="eyebrow">🚀 Join the project</div>
+          <h2>Want your art featured in-game?</h2>
+          <p>
+            Join the Discord, jump into the TCG channels, and help shape the next evolution of QSMP2 TCG.
+          </p>
+
+          <div class="hero-actions" style="justify-content:center; margin-top: 26px;">
+            <a class="btn btn-primary" href="https://discord.gg/JeremyFrieser" target="_blank" rel="noopener noreferrer">Enter the Discord</a>
+            <a class="btn btn-secondary" href="#top">Back to top</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer container">
+      <div class="footer-inner">
+        <span>QSMP2 TCG — fan-made community project.</span>
+      </div>
+    </footer>
+  </div>
+
+  <div class="card-modal" id="cardModal" aria-hidden="true">
+    <div class="card-modal-inner">
+      <button class="card-modal-close" id="cardModalClose" type="button" aria-label="Close card preview">✕</button>
+      <div class="card-modal-stage" id="modalTiltArea">
+        <div class="modal-tilt-area">
+          <div class="modal-card-frame" id="modalCardFrame">
+            <img id="modalImage" src="" alt="">
+            <div class="modal-shine" id="modalShine"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cards = [
+      { title: 'Bartender Jeremy', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/bartender-jeremy-high.png', tags: ['jeremy', 'all'] },
+      { title: 'The Heist', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-heist-high.png', tags: ['chaos', 'all'] },
+      { title: 'Donny Bravo', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/donny-bravo-high.png', tags: ['all'] },
+      { title: 'The Zipline', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-zipline-high.png', tags: ['all'] },
+      { title: 'Sage 2', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/sage-2-high.png', tags: ['all'] },
+      { title: 'Sipping Cocktails', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/sipping-cocktails-high.png', tags: ['all'] },
+      { title: 'Cucurucho', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/cucurucho-high.png', tags: ['cucurucho', 'all'] },
+      { title: 'Kurwa Raketa', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/kurwa-raketa-high.png', tags: ['chaos', 'all'] },
+      { title: 'Shappo Yappings', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/shappo-yappings-high.jpg', tags: ['all'] },
+      { title: 'Adriaantje', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/adriaantje-high.png', tags: ['all'] },
+      { title: 'Colleagues', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/colleagues-high.png', tags: ['all'] },
+      { title: 'The Hello Kitty Incident', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-hello-kitty-incident-high.png', tags: ['chaos', 'all'] },
+      { title: 'House Destruction', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/house-destruction-high.png', tags: ['chaos', 'all'] },
+      { title: 'The Pan', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-pan-high.png', tags: ['all'] },
+      { title: 'Schlattcoin', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/schlattcoin-high.png', tags: ['all'] },
+      { title: 'Reverse Therapy', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/reverse-therapy-high.png', tags: ['all'] },
+      { title: 'Erwoon from Poland', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/erwoon-from-poland-high.png', tags: ['all'] },
+      { title: 'To Kill a Warden', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/to-kill-a-warden-high.png', tags: ['all'] },
+      { title: 'Emerald Addict', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/emerald-addict-high.png', tags: ['all'] },
+      { title: 'Katie B', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/katie-b-high.png', tags: ['all'] },
+      { title: 'The Collector', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-collector-high.png', tags: ['all'] },
+      { title: 'Pepino the Cameraman', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/pepino-the-cameraman-high.png', tags: ['all'] },
+      { title: 'Paranoid Jeremy', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/paranoid-jeremy-high.png', tags: ['jeremy', 'all'] },
+      { title: 'Therapy Sessions', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/therapy-sessions-high.png', tags: ['all'] },
+      { title: 'The Argument', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-argument-high.png', tags: ['all'] },
+      { title: 'First Courtcase', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/first-courtcase-high.png', tags: ['trial', 'all'] },
+      { title: 'Saucebxss', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/saucebxss-high.jpg', tags: ['all'] },
+      { title: 'Trial Ready Cucurucho', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/trial-ready-cucurucho-high.jpg', tags: ['cucurucho', 'trial', 'all'] },
+      { title: 'Khatarnak Ishan', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/khatarnak-ishan-high.jpg', tags: ['all'] },
+      { title: 'Gustavo Frog', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/gustavo-frog-high.png', tags: ['all'] },
+      { title: 'Forgotten Paraglider', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/forgotten-paraglider-high.png', tags: ['all'] },
+      { title: 'Haiper', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/haiper-high.png', tags: ['all'] },
+      { title: 'The Old Married Couple', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-old-married-couple-high.png', tags: ['all'] },
+      { title: 'The Trial', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-trial-high.png', tags: ['trial', 'all'] },
+      { title: 'Kelpamine', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/kelpamine-high.png', tags: ['all'] },
+      { title: 'Peqitw', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/peqitw-high.png', tags: ['all'] },
+      { title: 'The Lost Bike', image: 'https://primary.jwwb.nl/public/j/w/z/temp-znfmedmczpioccnvfzqk/the-lost-bike-high.png', tags: ['all'] }
+    ];
+
+    const galleryGrid = document.getElementById('galleryGrid');
+    const searchInput = document.getElementById('gallerySearch');
+    const chips = Array.from(document.querySelectorAll('.chip'));
+    const emptyState = document.getElementById('emptyState');
+
+    const cardModal = document.getElementById('cardModal');
+    const cardModalClose = document.getElementById('cardModalClose');
+    const modalImage = document.getElementById('modalImage');
+    const modalTiltArea = document.getElementById('modalTiltArea');
+    const modalCardFrame = document.getElementById('modalCardFrame');
+    const modalShine = document.getElementById('modalShine');
+
+    let activeFilter = 'all';
+
+    function resetModalTilt() {
+      modalCardFrame.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+      modalShine.style.opacity = '0';
+      modalShine.style.background = 'transparent';
+    }
+
+    function openModal(card) {
+      modalImage.src = card.image;
+      modalImage.alt = card.title;
+      cardModal.classList.add('open');
+      cardModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+      resetModalTilt();
+    }
+
+    function closeModal() {
+      cardModal.classList.remove('open');
+      cardModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+      resetModalTilt();
+    }
+
+    function renderGallery() {
+      const query = searchInput.value.trim().toLowerCase();
+
+      const filtered = cards.filter(card => {
+        const matchesSearch = card.title.toLowerCase().includes(query);
+        const matchesFilter = activeFilter === 'all' ? true : card.tags.includes(activeFilter);
+        return matchesSearch && matchesFilter;
+      });
+
+      galleryGrid.innerHTML = filtered.map(card => `
+        <article class="gallery-card reveal visible">
+          <button class="card-button" type="button" data-index="${cards.indexOf(card)}" aria-label="Open ${card.title}">
+            <div class="thumb">
+              <img src="${card.image}" alt="${card.title}">
+            </div>
+            <div class="meta">
+              <strong>${card.title}</strong>
+              <span>Click to open fullscreen preview</span>
+            </div>
+          </button>
+        </article>
+      `).join('');
+
+      emptyState.style.display = filtered.length ? 'none' : 'block';
+
+      galleryGrid.querySelectorAll('.card-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const cardIndex = Number(button.dataset.index);
+          openModal(cards[cardIndex]);
+        });
+      });
+    }
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(item => item.classList.remove('active'));
+        chip.classList.add('active');
+        activeFilter = chip.dataset.filter;
+        renderGallery();
+      });
+    });
+
+    searchInput.addEventListener('input', renderGallery);
+
+    modalTiltArea.addEventListener('mousemove', event => {
+      if (!cardModal.classList.contains('open')) return;
+
+      const rect = modalTiltArea.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const rotateY = ((x - centerX) / centerX) * 10;
+      const rotateX = ((centerY - y) / centerY) * 10;
+
+      modalCardFrame.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+
+      const shineX = (x / rect.width) * 100;
+      const shineY = (y / rect.height) * 100;
+
+      modalShine.style.opacity = '1';
+      modalShine.style.background = `
+        radial-gradient(circle at ${shineX}% ${shineY}%, rgba(255,255,255,0.45), transparent 26%),
+        linear-gradient(135deg, rgba(255,255,255,0.18), transparent 44%)
+      `;
+    });
+
+    modalTiltArea.addEventListener('mouseleave', resetModalTilt);
+    cardModalClose.addEventListener('click', closeModal);
+
+    cardModal.addEventListener('click', event => {
+      if (event.target === cardModal) closeModal();
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && cardModal.classList.contains('open')) {
+        closeModal();
+      }
+    });
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(item => {
+      if (!item.classList.contains('visible')) observer.observe(item);
+    });
+
+    renderGallery();
+  </script>
+</body>
+</html>
